@@ -1,0 +1,25 @@
+Source: libgato
+Priority: extra
+Maintainer: unknown <maemo@javispedro.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.4
+Section: libs
+Homepage: https://gitorious.org/gato
+
+Package: libgato-dev
+Section: devel
+Architecture: any
+Depends: libgato1 (= ${binary:Version})
+Description: Development header for libgato
+ libgato is a library that can used to communicate with Bluetooth Smart devices
+ using the Generitc Attribute Profile (GATT).
+ .
+ This package contains development headers.
+
+Package: libgato1
+Section: devel
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: A Generic Attribute Profile library for Bluetooth devices
+ libgato is a library that can used to communicate with Bluetooth Smart devices
+ using the Generitc Attribute Profile (GATT).

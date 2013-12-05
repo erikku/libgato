@@ -1,5 +1,6 @@
 TEMPLATE = lib
 TARGET = gato
+VERSION = 1.0.0
 
 QT -= gui
 
@@ -36,6 +37,13 @@ HEADERS += libgato_global.h gato.h \
 
 target.path = /usr/lib
 INSTALLS += target
+
+publicheaders.files = libgato_global.h gato.h \
+	gatocentralmanager.h gatoperipheral.h \
+	gatoservice.h gatocharacteristic.h gatodescriptor.h \
+	gatouuid.h gatoaddress.h
+publicheaders.path = /usr/include
+INSTALLS += publicheaders
 
 OTHER_FILES += \
     qtc_packaging/debian_harmattan/rules \
