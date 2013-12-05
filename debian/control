@@ -20,6 +20,6 @@ Package: libgato1
 Section: devel
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: A Generic Attribute Profile library for Bluetooth devices
+Description: Generic Attribute Profile library for Bluetooth devices
  libgato is a library that can used to communicate with Bluetooth Smart devices
  using the Generitc Attribute Profile (GATT).

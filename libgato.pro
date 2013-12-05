@@ -42,7 +42,7 @@ publicheaders.files = libgato_global.h gato.h \
 	gatocentralmanager.h gatoperipheral.h \
 	gatoservice.h gatocharacteristic.h gatodescriptor.h \
 	gatouuid.h gatoaddress.h
-publicheaders.path = /usr/include
+publicheaders.path = /usr/include/gato
 INSTALLS += publicheaders
 
 OTHER_FILES += \
