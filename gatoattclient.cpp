@@ -20,7 +20,7 @@
 
 #include <QtCore/QDebug>
 
-#include "gatoatt.h"
+#include "gatoattclient.h"
 #include "helpers.h"
 
 #define PROTOCOL_DEBUG 0
@@ -72,7 +72,7 @@ static QByteArray remove_method_signature(const char *sig)
 	return QByteArray(sig + 1, bracketPosition - 1 - sig);
 }
 
-GatoAtt::GatoAtt(QObject *parent) :
+GatoAttClient::GatoAttClient(QObject *parent) :
     QObject(parent), socket(new GatoSocket(this)), mtu(ATT_DEFAULT_LE_MTU), next_id(1)
 {
 	connect(socket, SIGNAL(connected()), SLOT(handleSocketConnected()));
@@ -80,26 +80,26 @@ GatoAtt::GatoAtt(QObject *parent) :
 	connect(socket, SIGNAL(readyRead()), SLOT(handleSocketReadyRead()));
 }
 
-GatoAtt::~GatoAtt()
+GatoAttClient::~GatoAttClient()
 {
 }
 
-GatoSocket::State GatoAtt::state() const
+GatoSocket::State GatoAttClient::state() const
 {
 	return socket->state();
 }
 
-bool GatoAtt::connectTo(const GatoAddress &addr)
+bool GatoAttClient::connectTo(const GatoAddress &addr)
 {
 	return socket->connectTo(addr, ATT_CID);
 }
 
-void GatoAtt::close()
+void GatoAttClient::close()
 {
 	socket->close();
 }
 
-uint GatoAtt::request(int opcode, const QByteArray &data, QObject *receiver, const char *member)
+uint GatoAttClient::request(int opcode, const QByteArray &data, QObject *receiver, const char *member)
 {
 	Request req;
 	req.id = next_id++;
@@ -119,7 +119,7 @@ uint GatoAtt::request(int opcode, const QByteArray &data, QObject *receiver, con
 	return req.id;
 }
 
-void GatoAtt::cancelRequest(uint id)
+void GatoAttClient::cancelRequest(uint id)
 {
 	QQueue<Request>::iterator it = pending_requests.begin();
 	while (it != pending_requests.end()) {
@@ -131,13 +131,13 @@ void GatoAtt::cancelRequest(uint id)
 	}
 }
 
-uint GatoAtt::requestExchangeMTU(quint8 client_mtu, QObject *receiver, const char *member)
+uint GatoAttClient::requestExchangeMTU(quint8 client_mtu, QObject *receiver, const char *member)
 {
 	QByteArray data(1, client_mtu);
 	return request(AttOpExchangeMTURequest, data, receiver, member);
 }
 
-uint GatoAtt::requestFindInformation(GatoHandle start, GatoHandle end, QObject *receiver, const char *member)
+uint GatoAttClient::requestFindInformation(GatoHandle start, GatoHandle end, QObject *receiver, const char *member)
 {
 	QByteArray data;
 	QDataStream s(&data, QIODevice::WriteOnly);
@@ -147,7 +147,7 @@ uint GatoAtt::requestFindInformation(GatoHandle start, GatoHandle end, QObject *
 	return request(AttOpFindInformationRequest, data, receiver, member);
 }
 
-uint GatoAtt::requestFindByTypeValue(GatoHandle start, GatoHandle end, const GatoUUID &uuid, const QByteArray &value, QObject *receiver, const char *member)
+uint GatoAttClient::requestFindByTypeValue(GatoHandle start, GatoHandle end, const GatoUUID &uuid, const QByteArray &value, QObject *receiver, const char *member)
 {
 	QByteArray data;
 	QDataStream s(&data, QIODevice::WriteOnly);
@@ -168,7 +168,7 @@ uint GatoAtt::requestFindByTypeValue(GatoHandle start, GatoHandle end, const Gat
 	return request(AttOpFindByTypeValueRequest, data, receiver, member);
 }
 
-uint GatoAtt::requestReadByType(GatoHandle start, GatoHandle end, const GatoUUID &uuid, QObject *receiver, const char *member)
+uint GatoAttClient::requestReadByType(GatoHandle start, GatoHandle end, const GatoUUID &uuid, QObject *receiver, const char *member)
 {
 	QByteArray data;
 	QDataStream s(&data, QIODevice::WriteOnly);
@@ -179,7 +179,7 @@ uint GatoAtt::requestReadByType(GatoHandle start, GatoHandle end, const GatoUUID
 	return request(AttOpReadByTypeRequest, data, receiver, member);
 }
 
-uint GatoAtt::requestRead(GatoHandle handle, QObject *receiver, const char *member)
+uint GatoAttClient::requestRead(GatoHandle handle, QObject *receiver, const char *member)
 {
 	QByteArray data;
 	QDataStream s(&data, QIODevice::WriteOnly);
@@ -189,7 +189,7 @@ uint GatoAtt::requestRead(GatoHandle handle, QObject *receiver, const char *memb
 	return request(AttOpReadRequest, data, receiver, member);
 }
 
-uint GatoAtt::requestReadByGroupType(GatoHandle start, GatoHandle end, const GatoUUID &uuid, QObject *receiver, const char *member)
+uint GatoAttClient::requestReadByGroupType(GatoHandle start, GatoHandle end, const GatoUUID &uuid, QObject *receiver, const char *member)
 {
 	QByteArray data;
 	QDataStream s(&data, QIODevice::WriteOnly);
@@ -200,7 +200,7 @@ uint GatoAtt::requestReadByGroupType(GatoHandle start, GatoHandle end, const Gat
 	return request(AttOpReadByGroupTypeRequest, data, receiver, member);
 }
 
-uint GatoAtt::requestWrite(GatoHandle handle, const QByteArray &value, QObject *receiver, const char *member)
+uint GatoAttClient::requestWrite(GatoHandle handle, const QByteArray &value, QObject *receiver, const char *member)
 {
 	QByteArray data;
 	QDataStream s(&data, QIODevice::WriteOnly);
@@ -211,7 +211,7 @@ uint GatoAtt::requestWrite(GatoHandle handle, const QByteArray &value, QObject *
 	return request(AttOpWriteRequest, data, receiver, member);
 }
 
-void GatoAtt::command(int opcode, const QByteArray &data)
+void GatoAttClient::command(int opcode, const QByteArray &data)
 {
 	QByteArray packet = data;
 	packet.prepend(static_cast<char>(opcode));
@@ -223,7 +223,18 @@ void GatoAtt::command(int opcode, const QByteArray &data)
 #endif
 }
 
-void GatoAtt::sendARequest()
+void GatoAttClient::commandWrite(GatoHandle handle, const QByteArray &value)
+{
+	QByteArray data;
+	QDataStream s(&data, QIODevice::WriteOnly);
+	s.setByteOrder(QDataStream::LittleEndian);
+	s << handle;
+	s.writeRawData(value.constData(), value.length());
+
+	command(AttOpWriteCommand, data);
+}
+
+void GatoAttClient::sendARequest()
 {
 	if (pending_requests.isEmpty()) {
 		return;
@@ -237,7 +248,7 @@ void GatoAtt::sendARequest()
 #endif
 }
 
-bool GatoAtt::handleEvent(const QByteArray &event)
+bool GatoAttClient::handleEvent(const QByteArray &event)
 {
 	const char *data = event.constData();
 	quint8 opcode = event[0];
@@ -261,7 +272,7 @@ bool GatoAtt::handleEvent(const QByteArray &event)
 	}
 }
 
-bool GatoAtt::handleResponse(const Request &req, const QByteArray &response)
+bool GatoAttClient::handleResponse(const Request &req, const QByteArray &response)
 {
 	// If we know the request, we can provide a decoded answer
 	switch (req.opcode) {
@@ -289,14 +300,14 @@ bool GatoAtt::handleResponse(const Request &req, const QByteArray &response)
 			if (req.receiver) {
 				QMetaObject::invokeMethod(req.receiver, req.member.constData(),
 				                          Q_ARG(uint, req.id),
-				                          Q_ARG(QList<GatoAtt::InformationData>, parseInformationData(response.mid(1))));
+				                          Q_ARG(QList<GatoAttClient::InformationData>, parseInformationData(response.mid(1))));
 			}
 			return true;
 		} else if (response[0] == AttOpErrorResponse && response[1] == AttOpFindInformationRequest) {
 			if (req.receiver) {
 				QMetaObject::invokeMethod(req.receiver, req.member.constData(),
 				                          Q_ARG(uint, req.id),
-				                          Q_ARG(QList<GatoAtt::InformationData>, QList<InformationData>()));
+				                          Q_ARG(QList<GatoAttClient::InformationData>, QList<InformationData>()));
 			}
 			return true;
 		} else {
@@ -308,14 +319,14 @@ bool GatoAtt::handleResponse(const Request &req, const QByteArray &response)
 			if (req.receiver) {
 				QMetaObject::invokeMethod(req.receiver, req.member.constData(),
 				                          Q_ARG(uint, req.id),
-				                          Q_ARG(QList<GatoAtt::HandleInformation>, parseHandleInformation(response.mid(1))));
+				                          Q_ARG(QList<GatoAttClient::HandleInformation>, parseHandleInformation(response.mid(1))));
 			}
 			return true;
 		} else if (response[0] == AttOpErrorResponse && response[1] == AttOpFindByTypeValueRequest) {
 			if (req.receiver) {
 				QMetaObject::invokeMethod(req.receiver, req.member.constData(),
 				                          Q_ARG(uint, req.id),
-				                          Q_ARG(QList<GatoAtt::HandleInformation>, QList<HandleInformation>()));
+				                          Q_ARG(QList<GatoAttClient::HandleInformation>, QList<HandleInformation>()));
 			}
 			return true;
 		} else {
@@ -327,14 +338,14 @@ bool GatoAtt::handleResponse(const Request &req, const QByteArray &response)
 			if (req.receiver) {
 				QMetaObject::invokeMethod(req.receiver, req.member.constData(),
 				                          Q_ARG(uint, req.id),
-				                          Q_ARG(QList<GatoAtt::AttributeData>, parseAttributeData(response.mid(1))));
+				                          Q_ARG(QList<GatoAttClient::AttributeData>, parseAttributeData(response.mid(1))));
 			}
 			return true;
 		} else if (response[0] == AttOpErrorResponse && response[1] == AttOpReadByTypeRequest) {
 			if (req.receiver) {
 				QMetaObject::invokeMethod(req.receiver, req.member.constData(),
 				                          Q_ARG(uint, req.id),
-				                          Q_ARG(QList<GatoAtt::AttributeData>, QList<AttributeData>()));
+				                          Q_ARG(QList<GatoAttClient::AttributeData>, QList<AttributeData>()));
 			}
 			return true;
 		} else {
@@ -365,14 +376,14 @@ bool GatoAtt::handleResponse(const Request &req, const QByteArray &response)
 			if (req.receiver) {
 				QMetaObject::invokeMethod(req.receiver, req.member.constData(),
 				                          Q_ARG(uint, req.id),
-				                          Q_ARG(QList<GatoAtt::AttributeGroupData>, parseAttributeGroupData(response.mid(1))));
+				                          Q_ARG(QList<GatoAttClient::AttributeGroupData>, parseAttributeGroupData(response.mid(1))));
 			}
 			return true;
 		} else if (response[0] == AttOpErrorResponse && response[1] == AttOpReadByGroupTypeRequest) {
 			if (req.receiver) {
 				QMetaObject::invokeMethod(req.receiver, req.member.constData(),
 				                          Q_ARG(uint, req.id),
-				                          Q_ARG(QList<GatoAtt::AttributeGroupData>, QList<AttributeGroupData>()));
+				                          Q_ARG(QList<GatoAttClient::AttributeGroupData>, QList<AttributeGroupData>()));
 			}
 			return true;
 		} else {
@@ -407,7 +418,7 @@ bool GatoAtt::handleResponse(const Request &req, const QByteArray &response)
 	}
 }
 
-void GatoAtt::writeUuid16or128(QDataStream &s, const GatoUUID &uuid)
+void GatoAttClient::writeUuid16or128(QDataStream &s, const GatoUUID &uuid)
 {
 	s.setByteOrder(QDataStream::LittleEndian);
 
@@ -420,7 +431,7 @@ void GatoAtt::writeUuid16or128(QDataStream &s, const GatoUUID &uuid)
 	}
 }
 
-QList<GatoAtt::InformationData> GatoAtt::parseInformationData(const QByteArray &data)
+QList<GatoAttClient::InformationData> GatoAttClient::parseInformationData(const QByteArray &data)
 {
 	const int format = data[0];
 	QList<InformationData> list;
@@ -463,7 +474,7 @@ QList<GatoAtt::InformationData> GatoAtt::parseInformationData(const QByteArray &
 	return list;
 }
 
-QList<GatoAtt::HandleInformation> GatoAtt::parseHandleInformation(const QByteArray &data)
+QList<GatoAttClient::HandleInformation> GatoAttClient::parseHandleInformation(const QByteArray &data)
 {
 	const int item_len = 2;
 	const int items = data.size() / item_len;
@@ -484,7 +495,7 @@ QList<GatoAtt::HandleInformation> GatoAtt::parseHandleInformation(const QByteArr
 	return list;
 }
 
-QList<GatoAtt::AttributeData> GatoAtt::parseAttributeData(const QByteArray &data)
+QList<GatoAttClient::AttributeData> GatoAttClient::parseAttributeData(const QByteArray &data)
 {
 	const int item_len = data[0];
 	const int items = (data.size() - 1) / item_len;
@@ -505,7 +516,7 @@ QList<GatoAtt::AttributeData> GatoAtt::parseAttributeData(const QByteArray &data
 	return list;
 }
 
-QList<GatoAtt::AttributeGroupData> GatoAtt::parseAttributeGroupData(const QByteArray &data)
+QList<GatoAttClient::AttributeGroupData> GatoAttClient::parseAttributeGroupData(const QByteArray &data)
 {
 	const int item_len = data[0];
 	const int items = (data.size() - 1) / item_len;
@@ -527,18 +538,18 @@ QList<GatoAtt::AttributeGroupData> GatoAtt::parseAttributeGroupData(const QByteA
 	return list;
 }
 
-void GatoAtt::handleSocketConnected()
+void GatoAttClient::handleSocketConnected()
 {
 	requestExchangeMTU(ATT_DEFAULT_LE_MTU, this, SLOT(handleServerMTU(quint8)));
 	emit connected();
 }
 
-void GatoAtt::handleSocketDisconnected()
+void GatoAttClient::handleSocketDisconnected()
 {
 	emit disconnected();
 }
 
-void GatoAtt::handleSocketReadyRead()
+void GatoAttClient::handleSocketReadyRead()
 {
 	QByteArray pkt = socket->receive();
 	if (!pkt.isEmpty()) {
@@ -567,7 +578,7 @@ void GatoAtt::handleSocketReadyRead()
 	}
 }
 
-void GatoAtt::handleServerMTU(uint req, quint8 server_mtu)
+void GatoAttClient::handleServerMTU(uint req, quint8 server_mtu)
 {
 	Q_UNUSED(req);
 	if (server_mtu != 0) {

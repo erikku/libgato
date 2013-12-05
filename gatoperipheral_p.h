@@ -5,7 +5,7 @@
 #include "gatoservice.h"
 #include "gatocharacteristic.h"
 #include "gatodescriptor.h"
-#include "gatoatt.h"
+#include "gatoattclient.h"
 
 class GatoPeripheralPrivate : public QObject
 {
@@ -31,7 +31,7 @@ public:
 	QMap<GatoHandle, GatoHandle> value_to_characteristic;
 	QMap<GatoHandle, GatoHandle> descriptor_to_characteristic;
 
-	GatoAtt *att;
+	GatoAttClient *att;
 	QMap<uint, GatoUUID> pending_primary_reqs;
 	QMap<uint, GatoHandle> pending_characteristic_reqs;
 	QMap<uint, GatoHandle> pending_characteristic_read_reqs;
@@ -58,10 +58,10 @@ public slots:
 	void handleAttConnected();
 	void handleAttDisconnected();
 	void handleAttAttributeUpdated(GatoHandle handle, const QByteArray &value, bool confirmed);
-	void handlePrimary(uint req, const QList<GatoAtt::AttributeGroupData>& list);
-	void handlePrimaryForService(uint req, const QList<GatoAtt::HandleInformation>& list);
-	void handleCharacteristic(uint req, const QList<GatoAtt::AttributeData> &list);
-	void handleDescriptors(uint req, const QList<GatoAtt::InformationData> &list);
+	void handlePrimary(uint req, const QList<GatoAttClient::AttributeGroupData>& list);
+	void handlePrimaryForService(uint req, const QList<GatoAttClient::HandleInformation>& list);
+	void handleCharacteristic(uint req, const QList<GatoAttClient::AttributeData> &list);
+	void handleDescriptors(uint req, const QList<GatoAttClient::InformationData> &list);
 	void handleCharacteristicRead(uint req, const QByteArray &value);
 	void handleDescriptorRead(uint req, const QByteArray &value);
 	void handleCharacteristicWrite(uint req, bool ok);

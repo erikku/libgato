@@ -1,18 +1,18 @@
-#ifndef GATOATTSOCKET_H
-#define GATOATTSOCKET_H
+#ifndef GATOATTCLIENT_H
+#define GATOATTCLIENT_H
 
 #include <QtCore/QObject>
 #include <QtCore/QQueue>
 #include "gatosocket.h"
 #include "gatouuid.h"
 
-class GatoAtt : public QObject
+class GatoAttClient : public QObject
 {
 	Q_OBJECT
 
 public:
-	explicit GatoAtt(QObject *parent = 0);
-	~GatoAtt();
+	explicit GatoAttClient(QObject *parent = 0);
+	~GatoAttClient();
 
 	GatoSocket::State state() const;
 
@@ -52,6 +52,7 @@ public:
 	void cancelRequest(uint id);
 
 	void command(int opcode, const QByteArray &data);
+	void commandWrite(GatoHandle handle, const QByteArray &value);
 
 signals:
 	void connected();
@@ -94,4 +95,4 @@ private:
 	QQueue<Request> pending_requests;
 };
 
-#endif // GATOATTSOCKET_H
+#endif // GATOATTCLIENT_H

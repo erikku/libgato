@@ -16,6 +16,7 @@ class LIBGATO_EXPORT GatoPeripheral : public QObject
 	Q_OBJECT
 	Q_DECLARE_PRIVATE(GatoPeripheral)
 	Q_ENUMS(State)
+	Q_ENUMS(WriteType)
 	Q_PROPERTY(GatoAddress address READ address)
 	Q_PROPERTY(QString name READ name NOTIFY nameChanged)
 
@@ -27,6 +28,11 @@ public:
 		StateDisconnected,
 		StateConnecting,
 		StateConnected
+	};
+
+	enum WriteType {
+		WriteWithResponse = 0,
+		WriteWithoutResponse
 	};
 
 	State state() const;
@@ -46,7 +52,7 @@ public slots:
 	void discoverDescriptors(const GatoCharacteristic &characteristic);
 	void readValue(const GatoCharacteristic &characteristic);
 	void readValue(const GatoDescriptor &descriptor);
-	void writeValue(const GatoCharacteristic &characteristic, const QByteArray &data);
+	void writeValue(const GatoCharacteristic &characteristic, const QByteArray &data, WriteType type = WriteWithResponse);
 	void writeValue(const GatoDescriptor &descriptor, const QByteArray &data);
 	void setNotification(const GatoCharacteristic &characteristic, bool enabled);
 

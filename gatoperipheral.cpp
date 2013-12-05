@@ -49,7 +49,7 @@ GatoPeripheral::GatoPeripheral(const GatoAddress &addr, QObject *parent) :
 {
 	Q_D(GatoPeripheral);
 	d->addr = addr;
-	d->att = new GatoAtt(this);
+	d->att = new GatoAttClient(this);
 
 	connect(d->att, SIGNAL(connected()), d, SLOT(handleAttConnected()));
 	connect(d->att, SIGNAL(disconnected()), d, SLOT(handleAttDisconnected()));
@@ -162,7 +162,7 @@ void GatoPeripheral::discoverServices()
 	if (!d->complete_services && state() == StateConnected) {
 		d->clearServices();
 		d->att->requestReadByGroupType(0x0001, 0xFFFF, GatoUUID::GattPrimaryService,
-		                               d, SLOT(handlePrimary(QList<GatoAtt::AttributeGroupData>)));
+		                               d, SLOT(handlePrimary(QList<GatoAttClient::AttributeGroupData>)));
 	} else {
 		qWarning() << "Not connected";
 	}
@@ -176,7 +176,7 @@ void GatoPeripheral::discoverServices(const QList<GatoUUID> &serviceUUIDs)
 		foreach (const GatoUUID& uuid, serviceUUIDs) {
 			QByteArray value = gatouuid_to_bytearray(uuid, true, false);
 			uint req = d->att->requestFindByTypeValue(0x0001, 0xFFFF, GatoUUID::GattPrimaryService, value,
-			                                          d, SLOT(handlePrimaryForService(uint,QList<GatoAtt::HandleInformation>)));
+			                                          d, SLOT(handlePrimaryForService(uint,QList<GatoAttClient::HandleInformation>)));
 			d->pending_primary_reqs.insert(req, uuid);
 		}
 	} else {
@@ -209,7 +209,7 @@ void GatoPeripheral::discoverCharacteristics(const GatoService &service)
 		d->clearServiceCharacteristics(&our_service);
 
 		uint req = d->att->requestReadByType(start, end, GatoUUID::GattCharacteristic,
-		                                     d, SLOT(handleCharacteristic(QList<GatoAtt::AttributeData>)));
+		                                     d, SLOT(handleCharacteristic(QList<GatoAttClient::AttributeData>)));
 		d->pending_characteristic_reqs.insert(req, start);
 	} else {
 		qWarning() << "Not connected";
@@ -244,7 +244,7 @@ void GatoPeripheral::discoverDescriptors(const GatoCharacteristic &characteristi
 		d->clearCharacteristicDescriptors(&our_char);
 		our_service.addCharacteristic(our_char); // Update service with empty descriptors list
 		uint req = d->att->requestFindInformation(our_char.startHandle() + 1, our_char.endHandle(),
-		                                          d, SLOT(handleDescriptors(uint,QList<GatoAtt::InformationData>)));
+		                                          d, SLOT(handleDescriptors(uint,QList<GatoAttClient::InformationData>)));
 		d->pending_descriptor_reqs.insert(req, char_handle);
 	} else {
 		qWarning() << "Not connected";
@@ -302,7 +302,7 @@ void GatoPeripheral::readValue(const GatoDescriptor &descriptor)
 	}
 }
 
-void GatoPeripheral::writeValue(const GatoCharacteristic &characteristic, const QByteArray &data)
+void GatoPeripheral::writeValue(const GatoCharacteristic &characteristic, const QByteArray &data, WriteType type)
 {
 	Q_D(GatoPeripheral);
 
@@ -318,8 +318,17 @@ void GatoPeripheral::writeValue(const GatoCharacteristic &characteristic, const 
 	Q_ASSERT(our_service.containsCharacteristic(char_handle));
 
 	if (state() == StateConnected) {
-		d->att->requestWrite(characteristic.valueHandle(), data,
-		                     d, SLOT(handleCharacteristicRead(uint,QByteArray)));
+		switch (type) {
+		case WriteWithResponse:
+			d->att->requestWrite(characteristic.valueHandle(), data,
+			                     d, SLOT(handleCharacteristicWrite(uint,bool)));
+			break;
+		case WriteWithoutResponse:
+			d->att->commandWrite(characteristic.valueHandle(), data);
+			break;
+		}
+
+
 	} else {
 		qWarning() << "Not connected";
 	}
@@ -563,7 +572,7 @@ void GatoPeripheralPrivate::handleAttAttributeUpdated(GatoHandle handle, const Q
 	}
 }
 
-void GatoPeripheralPrivate::handlePrimary(uint req, const QList<GatoAtt::AttributeGroupData> &list)
+void GatoPeripheralPrivate::handlePrimary(uint req, const QList<GatoAttClient::AttributeGroupData> &list)
 {
 	Q_Q(GatoPeripheral);
 	Q_UNUSED(req);
@@ -574,7 +583,7 @@ void GatoPeripheralPrivate::handlePrimary(uint req, const QList<GatoAtt::Attribu
 	} else {
 		GatoHandle last_handle = 0;
 
-		foreach (const GatoAtt::AttributeGroupData &data, list) {
+		foreach (const GatoAttClient::AttributeGroupData &data, list) {
 			GatoUUID uuid = bytearray_to_gatouuid(data.value);
 			GatoService service;
 
@@ -590,11 +599,11 @@ void GatoPeripheralPrivate::handlePrimary(uint req, const QList<GatoAtt::Attribu
 
 		// Fetch following attributes
 		att->requestReadByGroupType(last_handle + 1, 0xFFFF, GatoUUID::GattPrimaryService,
-		                            this, SLOT(handlePrimary(uint,QList<GatoAtt::AttributeGroupData>)));
+		                            this, SLOT(handlePrimary(uint,QList<GatoAttClient::AttributeGroupData>)));
 	}
 }
 
-void GatoPeripheralPrivate::handlePrimaryForService(uint req, const QList<GatoAtt::HandleInformation> &list)
+void GatoPeripheralPrivate::handlePrimaryForService(uint req, const QList<GatoAttClient::HandleInformation> &list)
 {
 	Q_Q(GatoPeripheral);
 
@@ -612,7 +621,7 @@ void GatoPeripheralPrivate::handlePrimaryForService(uint req, const QList<GatoAt
 	} else {
 		GatoHandle last_handle = 0;
 
-		foreach (const GatoAtt::HandleInformation &data, list) {
+		foreach (const GatoAttClient::HandleInformation &data, list) {
 			GatoService service;
 
 			service.setUuid(uuid);
@@ -628,12 +637,12 @@ void GatoPeripheralPrivate::handlePrimaryForService(uint req, const QList<GatoAt
 		// Fetch following attributes
 		QByteArray value = gatouuid_to_bytearray(uuid, true, false);
 		uint req = att->requestFindByTypeValue(last_handle + 1, 0xFFFF, GatoUUID::GattPrimaryService, value,
-		                                       this, SLOT(handlePrimaryForService(uint,QList<GatoAtt::HandleInformation>)));
+		                                       this, SLOT(handlePrimaryForService(uint,QList<GatoAttClient::HandleInformation>)));
 		pending_primary_reqs.insert(req, uuid);
 	}
 }
 
-void GatoPeripheralPrivate::handleCharacteristic(uint req, const QList<GatoAtt::AttributeData> &list)
+void GatoPeripheralPrivate::handleCharacteristic(uint req, const QList<GatoAttClient::AttributeData> &list)
 {
 	Q_Q(GatoPeripheral);
 
@@ -664,7 +673,7 @@ void GatoPeripheralPrivate::handleCharacteristic(uint req, const QList<GatoAtt::
 		}
 
 		for (int i = 0; i < list.size(); i++) {
-			const GatoAtt::AttributeData &data = list.at(i);
+			const GatoAttClient::AttributeData &data = list.at(i);
 			GatoCharacteristic characteristic = parseCharacteristicValue(data.value);
 
 			characteristic.setStartHandle(data.handle);
@@ -689,12 +698,12 @@ void GatoPeripheralPrivate::handleCharacteristic(uint req, const QList<GatoAtt::
 
 		// Fetch following attributes
 		uint req = att->requestReadByType(last_handle + 1, service.endHandle(), GatoUUID::GattCharacteristic,
-		                                  this, SLOT(handleCharacteristic(uint,QList<GatoAtt::AttributeData>)));
+		                                  this, SLOT(handleCharacteristic(uint,QList<GatoAttClient::AttributeData>)));
 		pending_characteristic_reqs.insert(req, service.startHandle());
 	}
 }
 
-void GatoPeripheralPrivate::handleDescriptors(uint req, const QList<GatoAtt::InformationData> &list)
+void GatoPeripheralPrivate::handleDescriptors(uint req, const QList<GatoAttClient::InformationData> &list)
 {
 	Q_Q(GatoPeripheral);
 
@@ -723,7 +732,7 @@ void GatoPeripheralPrivate::handleDescriptors(uint req, const QList<GatoAtt::Inf
 	} else {
 		GatoHandle last_handle = 0;
 
-		foreach (const GatoAtt::InformationData &data, list) {
+		foreach (const GatoAttClient::InformationData &data, list) {
 			// Skip the value attribute itself.
 			if (data.handle == characteristic.valueHandle()) continue;
 
@@ -751,7 +760,7 @@ void GatoPeripheralPrivate::handleDescriptors(uint req, const QList<GatoAtt::Inf
 
 		// Fetch following attributes
 		uint req = att->requestFindInformation(last_handle + 1, characteristic.endHandle(),
-		                                       this, SLOT(handleDescriptors(uint,QList<GatoAtt::InformationData>)));
+		                                       this, SLOT(handleDescriptors(uint,QList<GatoAttClient::InformationData>)));
 		pending_descriptor_reqs.insert(req, char_handle);
 
 	}
