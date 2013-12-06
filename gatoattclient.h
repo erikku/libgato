@@ -41,8 +41,10 @@ public:
 		QByteArray value;
 	};
 
+	int mtu() const;
+
 	uint request(int opcode, const QByteArray &data, QObject *receiver, const char *member);
-	uint requestExchangeMTU(quint8 client_mtu, QObject *receiver, const char *member);
+	uint requestExchangeMTU(quint16 client_mtu, QObject *receiver, const char *member);
 	uint requestFindInformation(GatoHandle start, GatoHandle end, QObject *receiver, const char *member);
 	uint requestFindByTypeValue(GatoHandle start, GatoHandle end, const GatoUUID &uuid, const QByteArray& value, QObject *receiver, const char *member);
 	uint requestReadByType(GatoHandle start, GatoHandle end, const GatoUUID &uuid, QObject *receiver, const char *member);
@@ -86,11 +88,11 @@ private slots:
 	void handleSocketDisconnected();
 	void handleSocketReadyRead();
 
-	void handleServerMTU(uint req, quint8 server_mtu);
+	void handleServerMTU(uint req, quint16 server_mtu);
 
 private:
 	GatoSocket *socket;
-	quint8 mtu;
+	quint16 cur_mtu;
 	uint next_id;
 	QQueue<Request> pending_requests;
 };

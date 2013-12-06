@@ -90,8 +90,6 @@ void GatoCentralManager::scanForPeripheralsWithServices(const QList<GatoUUID> &u
 		return;
 	}
 
-	qDebug() << "LE Scan in progress";
-
 	d->notifier = new QSocketNotifier(d->hci, QSocketNotifier::Read);
 	connect(d->notifier, SIGNAL(activated(int)), this, SLOT(_q_readNotify()));
 
@@ -117,7 +115,6 @@ void GatoCentralManager::stopScan()
 {
 	Q_D(GatoCentralManager);
 	if (d->scanning()) {
-		qDebug() << "Stopping LE scan";
 		delete d->notifier;
 		setsockopt(d->hci, SOL_HCI, HCI_FILTER, &d->hci_of, sizeof(d->hci_of));
 		hci_le_set_scan_enable(d->hci, 0, 0, d->timeout);

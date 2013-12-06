@@ -82,6 +82,8 @@ public:
 
 	bool isNull() const;
 
+	int minimumSize() const;
+
 	quint16 toUInt16(bool *ok = 0) const;
 	quint32 toUInt32(bool *ok = 0) const;
 	gatouint128 toUInt128() const;
@@ -95,11 +97,7 @@ private:
 	QSharedDataPointer<GatoUUIDPrivate> d;
 };
 
-inline QDebug operator<<(QDebug debug, const GatoUUID &uuid)
-{
-    debug << uuid.toString();
-    return debug;
-}
+LIBGATO_EXPORT QDebug operator<<(QDebug debug, const GatoUUID &uuid);
 
 LIBGATO_EXPORT QDataStream & operator<<(QDataStream &s, const gatouint128 &u);
 LIBGATO_EXPORT QDataStream & operator>>(QDataStream &s, gatouint128 &u);

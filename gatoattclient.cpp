@@ -29,6 +29,7 @@
 #define ATT_PSM	31
 
 #define ATT_DEFAULT_LE_MTU 23
+#define ATT_MAX_LE_MTU 0x200
 
 enum AttOpcode {
 	AttOpNone = 0,
@@ -73,7 +74,7 @@ static QByteArray remove_method_signature(const char *sig)
 }
 
 GatoAttClient::GatoAttClient(QObject *parent) :
-    QObject(parent), socket(new GatoSocket(this)), mtu(ATT_DEFAULT_LE_MTU), next_id(1)
+    QObject(parent), socket(new GatoSocket(this)), cur_mtu(ATT_DEFAULT_LE_MTU), next_id(1)
 {
 	connect(socket, SIGNAL(connected()), SLOT(handleSocketConnected()));
 	connect(socket, SIGNAL(disconnected()), SLOT(handleSocketDisconnected()));
@@ -97,6 +98,11 @@ bool GatoAttClient::connectTo(const GatoAddress &addr)
 void GatoAttClient::close()
 {
 	socket->close();
+}
+
+int GatoAttClient::mtu() const
+{
+	return cur_mtu;
 }
 
 uint GatoAttClient::request(int opcode, const QByteArray &data, QObject *receiver, const char *member)
@@ -131,9 +137,13 @@ void GatoAttClient::cancelRequest(uint id)
 	}
 }
 
-uint GatoAttClient::requestExchangeMTU(quint8 client_mtu, QObject *receiver, const char *member)
+uint GatoAttClient::requestExchangeMTU(quint16 client_mtu, QObject *receiver, const char *member)
 {
-	QByteArray data(1, client_mtu);
+	QByteArray data;
+	QDataStream s(&data, QIODevice::WriteOnly);
+	s.setByteOrder(QDataStream::LittleEndian);
+	s << client_mtu;
+
 	return request(AttOpExchangeMTURequest, data, receiver, member);
 }
 
@@ -281,14 +291,14 @@ bool GatoAttClient::handleResponse(const Request &req, const QByteArray &respons
 			if (req.receiver) {
 				QMetaObject::invokeMethod(req.receiver, req.member.constData(),
 				                          Q_ARG(uint, req.id),
-										  Q_ARG(quint8, response[1]));
+				                          Q_ARG(quint16, read_le<quint16>(response.constData() + 1)));
 			}
 			return true;
 		} else if (response[0] == AttOpErrorResponse && response[1] == AttOpExchangeMTURequest) {
 			if (req.receiver) {
 				QMetaObject::invokeMethod(req.receiver, req.member.constData(),
 				                          Q_ARG(uint, req.id),
-					                      Q_ARG(quint8, response[1]));
+					                      Q_ARG(quint16, 0));
 			}
 			return true;
 		} else {
@@ -540,7 +550,7 @@ QList<GatoAttClient::AttributeGroupData> GatoAttClient::parseAttributeGroupData(
 
 void GatoAttClient::handleSocketConnected()
 {
-	requestExchangeMTU(ATT_DEFAULT_LE_MTU, this, SLOT(handleServerMTU(quint8)));
+	requestExchangeMTU(ATT_MAX_LE_MTU, this, SLOT(handleServerMTU(quint16)));
 	emit connected();
 }
 
@@ -574,16 +584,19 @@ void GatoAttClient::handleSocketReadyRead()
 			}
 		}
 
-		qDebug() << "No idea what this packet is";
+		qDebug() << "No idea what this packet ("
+		         << QString("0x%1").arg(uint(pkt.at(0)), 2, 16, QLatin1Char('0'))
+		         << ") is";
 	}
 }
 
-void GatoAttClient::handleServerMTU(uint req, quint8 server_mtu)
+void GatoAttClient::handleServerMTU(uint req, quint16 server_mtu)
 {
 	Q_UNUSED(req);
-	if (server_mtu != 0) {
-		mtu = server_mtu;
+	if (server_mtu) {
+		cur_mtu = server_mtu;
+		if (cur_mtu < ATT_DEFAULT_LE_MTU) {
+			cur_mtu = ATT_DEFAULT_LE_MTU;
+		}
 	}
 }
-
-

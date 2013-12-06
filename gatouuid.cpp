@@ -86,6 +86,20 @@ bool GatoUUID::isNull() const
 	return d->uuid.type == bt_uuid_t::BT_UUID_UNSPEC;
 }
 
+int GatoUUID::minimumSize() const
+{
+	switch (d->uuid.type) {
+	case bt_uuid_t::BT_UUID_UNSPEC:
+		return 0;
+	case bt_uuid_t::BT_UUID16:
+		return 2;
+	case bt_uuid_t::BT_UUID32:
+		return 4;
+	default:
+		return 16;
+	}
+}
+
 quint16 GatoUUID::toUInt16(bool *ok) const
 {
 	if (d->uuid.type == bt_uuid_t::BT_UUID16) {
@@ -141,6 +155,28 @@ bool operator==(const GatoUUID &a, const GatoUUID &b)
 bool operator!=(const GatoUUID &a, const GatoUUID &b)
 {
 	return bt_uuid_cmp(&a.d->uuid, &b.d->uuid) != 0;
+}
+
+QDebug operator<<(QDebug debug, const GatoUUID &uuid)
+{
+	quint16 uuid16;
+	quint32 uuid32;
+	bool ok = false;
+
+	uuid16 = uuid.toUInt16(&ok);
+	if (ok) {
+		debug.nospace() << "0x" << uuid16;
+		return debug.space();
+	}
+
+	uuid32 = uuid.toUInt32(&ok);
+	if (ok) {
+		debug.nospace() << "0x" << uuid32;
+		return debug.space();
+	}
+
+	debug.nospace() << "{" << uuid.toString().toLatin1().constData() << "}";
+    return debug.space();
 }
 
 QDataStream & operator<<(QDataStream &s, const gatouint128 &u)
