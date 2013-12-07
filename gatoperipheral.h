@@ -41,6 +41,7 @@ public:
 	QList<GatoService> services() const;
 
 	void parseEIR(quint8 data[], int len);
+	bool advertisesService(const GatoUUID &uuid) const;
 
 public slots:
 	void connectPeripheral();

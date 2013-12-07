@@ -138,6 +138,12 @@ void GatoPeripheral::parseEIR(quint8 data[], int len)
 	assert(pos == len);
 }
 
+bool GatoPeripheral::advertisesService(const GatoUUID &uuid) const
+{
+	Q_D(const GatoPeripheral);
+	return d->service_uuids.contains(uuid);
+}
+
 void GatoPeripheral::connectPeripheral()
 {
 	Q_D(GatoPeripheral);

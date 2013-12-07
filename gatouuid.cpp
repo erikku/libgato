@@ -165,13 +165,13 @@ QDebug operator<<(QDebug debug, const GatoUUID &uuid)
 
 	uuid16 = uuid.toUInt16(&ok);
 	if (ok) {
-		debug.nospace() << "0x" << uuid16;
+		debug.nospace() << "0x" << hex << uuid16 << dec;
 		return debug.space();
 	}
 
 	uuid32 = uuid.toUInt32(&ok);
 	if (ok) {
-		debug.nospace() << "0x" << uuid32;
+		debug.nospace() << "0x" << hex << uuid32 << dec;
 		return debug.space();
 	}
 

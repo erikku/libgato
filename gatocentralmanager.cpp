@@ -51,6 +51,20 @@ GatoCentralManager::~GatoCentralManager()
 	delete d_ptr;
 }
 
+GatoPeripheral * GatoCentralManager::getPeripheral(const GatoAddress &address)
+{
+	Q_D(GatoCentralManager);
+
+	GatoPeripheral *peripheral = d->peripherals.value(address);
+	if (peripheral) {
+		return peripheral;
+	} else {
+		peripheral = new GatoPeripheral(address, this);
+		d->peripherals.insert(address, peripheral);
+		return peripheral;
+	}
+}
+
 void GatoCentralManager::scanForPeripherals(PeripheralScanOptions options)
 {
 	scanForPeripheralsWithServices(QList<GatoUUID>(), options);
@@ -215,5 +229,20 @@ void GatoCentralManagerPrivate::handleAdvertising(le_advertising_info *info, int
 		peripheral->parseEIR(info->data, info->length);
 	}
 
-	emit q->discoveredPeripheral(peripheral, rssi);
+	bool passes_filter;
+	if (filter_uuids.isEmpty()) {
+		passes_filter = true;
+	} else {
+		passes_filter = false;
+		foreach (const GatoUUID & filter_uuid, filter_uuids) {
+			if (peripheral->advertisesService(filter_uuid)) {
+				passes_filter = true;
+				break;
+			}
+		}
+	}
+
+	if (passes_filter) {
+		emit q->discoveredPeripheral(peripheral, rssi);
+	}
 }

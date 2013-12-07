@@ -6,6 +6,7 @@
 #include "gatouuid.h"
 
 class GatoPeripheral;
+class GatoAddress;
 class GatoCentralManagerPrivate;
 
 class LIBGATO_EXPORT GatoCentralManager : public QObject
@@ -23,6 +24,8 @@ public:
 
 	explicit GatoCentralManager(QObject *parent = 0);
 	~GatoCentralManager();
+
+	GatoPeripheral *getPeripheral(const GatoAddress& address);
 
 public slots:
 	void scanForPeripherals(PeripheralScanOptions options = 0);
