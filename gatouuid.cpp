@@ -1,6 +1,7 @@
 /*
  *  libgato - A GATT/ATT library for use with Bluez
  *
+ *  Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
  *  Copyright (C) 2013 Javier S. Pedro <maemo@javispedro.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,91 +21,104 @@
 
 #include <QtCore/QDebug>
 #include <QtCore/QHash>
-#include <bluetooth/uuid.h>
 
 #include "gatouuid.h"
 
-union convert128 {
-	uint128_t u;
-	gatouint128 g;
-};
+// Bluetooth style UUIDs are like
+// {XXXXXXXX-0000-1000-8000-00805F9B34FB}
 
-struct GatoUUIDPrivate : QSharedData
-{
-	bt_uuid_t uuid;
-};
+static const quint16 baseuuid_data2 = 0x0000;
+static const quint16 baseuuid_data3 = 0x1000;
+static const quint8 baseuuid_data4[8] = {0x80, 0x00,
+                                         0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB};
+
+// Used in QUuid constructor, because it wants bytes as args instead of byte array
+#define BASEUUID_DATA4_VALUES baseuuid_data4[0], baseuuid_data4[1], baseuuid_data4[2], baseuuid_data4[3], \
+                              baseuuid_data4[4], baseuuid_data4[5], baseuuid_data4[6], baseuuid_data4[7]
 
 GatoUUID::GatoUUID()
-    : d(new GatoUUIDPrivate)
 {
-	memset(&d->uuid, 0, sizeof(d->uuid));
+
 }
 
 GatoUUID::GatoUUID(GattUuid uuid)
-    : d(new GatoUUIDPrivate)
+    : QUuid(uuid, baseuuid_data2, baseuuid_data3, BASEUUID_DATA4_VALUES)
 {
-	bt_uuid16_create(&d->uuid, uuid);
 }
 
 GatoUUID::GatoUUID(quint16 uuid)
-    : d(new GatoUUIDPrivate)
+    : QUuid(uuid, baseuuid_data2, baseuuid_data3, BASEUUID_DATA4_VALUES)
 {
-	bt_uuid16_create(&d->uuid, uuid);
+
 }
 
 GatoUUID::GatoUUID(quint32 uuid)
-    : d(new GatoUUIDPrivate)
+    : QUuid(uuid, baseuuid_data2, baseuuid_data3, BASEUUID_DATA4_VALUES)
 {
-	bt_uuid32_create(&d->uuid, uuid);
 }
 
 GatoUUID::GatoUUID(gatouint128 uuid)
-    : d(new GatoUUIDPrivate)
+    : QUuid()
 {
-	convert128 c128;
-	c128.g = uuid;
-	bt_uuid128_create(&d->uuid, c128.u);
+	quint32 tmp32;
+	memcpy(&tmp32, &uuid.data[0], 4);
+	data1 = qFromBigEndian<quint32>(tmp32);
+
+	quint16 tmp16;
+	memcpy(&tmp16, &uuid.data[4], 2);
+	data2 = qFromBigEndian<quint16>(tmp16);
+
+	memcpy(&tmp16, &uuid.data[6], 2);
+	data3 = qFromBigEndian<quint16>(tmp16);
+
+	memcpy(data4, &uuid.data[8], 8);
 }
 
 GatoUUID::GatoUUID(const QString &uuid)
-    : d(new GatoUUIDPrivate)
+    : QUuid(uuid)
 {
-	bt_string_to_uuid(&d->uuid, uuid.toLatin1().constData());
+
 }
 
 GatoUUID::GatoUUID(const GatoUUID &o)
-    : d(o.d)
+	: QUuid(o)
 {
+
+}
+
+GatoUUID::GatoUUID(const QUuid &uuid)
+    : QUuid(uuid)
+{
+
 }
 
 GatoUUID::~GatoUUID()
 {
 }
 
-bool GatoUUID::isNull() const
-{
-	return d->uuid.type == bt_uuid_t::BT_UUID_UNSPEC;
-}
-
 int GatoUUID::minimumSize() const
 {
-	switch (d->uuid.type) {
-	case bt_uuid_t::BT_UUID_UNSPEC:
+	if (isNull()) {
 		return 0;
-	case bt_uuid_t::BT_UUID16:
-		return 2;
-	case bt_uuid_t::BT_UUID32:
-		return 4;
-	default:
-		return 16;
 	}
+
+	if (data2 == baseuuid_data2 && data3 == baseuuid_data3 &&
+	        memcmp(data4, baseuuid_data4, sizeof(baseuuid_data4)) == 0) {
+		if (data1 & 0xFFFF0000) {
+			return 4;
+		} else {
+			return 2;
+		}
+	}
+
+	return 16;
 }
 
 quint16 GatoUUID::toUInt16(bool *ok) const
 {
-	if (d->uuid.type == bt_uuid_t::BT_UUID16) {
+	if (minimumSize() <= 2) {
 		if (ok) *ok = true;
-		return d->uuid.value.u16;
+		return data1;
 	} else {
 		if (ok) *ok = false;
 		return 0;
@@ -113,9 +127,9 @@ quint16 GatoUUID::toUInt16(bool *ok) const
 
 quint32 GatoUUID::toUInt32(bool *ok) const
 {
-	if (d->uuid.type == bt_uuid_t::BT_UUID32) {
+	if (minimumSize() <= 4) {
 		if (ok) *ok = true;
-		return d->uuid.value.u32;
+		return data1;
 	} else {
 		if (ok) *ok = false;
 		return 0;
@@ -124,37 +138,20 @@ quint32 GatoUUID::toUInt32(bool *ok) const
 
 gatouint128 GatoUUID::toUInt128() const
 {
-	bt_uuid_t u128;
-	bt_uuid_to_uuid128(&d->uuid, &u128);
-	return *reinterpret_cast<gatouint128*>(&u128.value.u128);
-}
+	gatouint128 uuid;
 
-QString GatoUUID::toString() const
-{
-	char buf[MAX_LEN_UUID_STR + 1];
-	if (bt_uuid_to_string(&d->uuid, buf, MAX_LEN_UUID_STR) == 0) {
-		return QString::fromAscii(buf);
-	} else {
-		return QString();
-	}
-}
+	quint32 tmp32 = qToBigEndian<quint32>(data1);
+	memcpy(&uuid.data[0], &tmp32, 4);
 
-GatoUUID & GatoUUID::operator =(const GatoUUID &o)
-{
-	if (this != &o) {
-		d = o.d;
-	}
-	return *this;
-}
+	quint16 tmp16 = qToBigEndian<quint16>(data2);
+	memcpy(&uuid.data[4], &tmp16, 2);
 
-bool operator==(const GatoUUID &a, const GatoUUID &b)
-{
-	return bt_uuid_cmp(&a.d->uuid, &b.d->uuid) == 0;
-}
+	tmp16 = qToBigEndian<quint16>(data3);
+	memcpy(&uuid.data[6], &tmp16, 2);
 
-bool operator!=(const GatoUUID &a, const GatoUUID &b)
-{
-	return bt_uuid_cmp(&a.d->uuid, &b.d->uuid) != 0;
+	memcpy(&uuid.data[8], data4, 8);
+
+	return uuid;
 }
 
 QDebug operator<<(QDebug debug, const GatoUUID &uuid)
@@ -175,7 +172,7 @@ QDebug operator<<(QDebug debug, const GatoUUID &uuid)
 		return debug.space();
 	}
 
-	debug.nospace() << "{" << uuid.toString().toLatin1().constData() << "}";
+	debug.nospace() << uuid.toString().toLatin1().constData();
     return debug.space();
 }
 

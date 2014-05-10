@@ -3,8 +3,7 @@
 
 #include <QtCore/QDebug>
 #include <QtCore/QtEndian>
-#include <QtCore/QSharedDataPointer>
-#include <QtCore/QString>
+#include <QtCore/QUuid>
 #include "libgato_global.h"
 
 class GatoUUIDPrivate;
@@ -44,11 +43,8 @@ inline LIBGATO_EXPORT void qToLittleEndian<gatouint128>(gatouint128 src, uchar *
 #endif
 }
 
-class LIBGATO_EXPORT GatoUUID
+class LIBGATO_EXPORT GatoUUID : public QUuid
 {
-	Q_GADGET
-	Q_ENUMS(GattUuid)
-
 public:
 	enum GattUuid {
 		GattGenericAccessProfile = 0x1800,
@@ -78,23 +74,14 @@ public:
 	explicit GatoUUID(gatouint128 uuid);
 	explicit GatoUUID(const QString &uuid);
 	GatoUUID(const GatoUUID &o);
+	GatoUUID(const QUuid &uuid);
 	~GatoUUID();
-
-	bool isNull() const;
 
 	int minimumSize() const;
 
 	quint16 toUInt16(bool *ok = 0) const;
 	quint32 toUInt32(bool *ok = 0) const;
 	gatouint128 toUInt128() const;
-	QString toString() const;
-
-	GatoUUID& operator=(const GatoUUID& o);
-	friend bool operator==(const GatoUUID &a, const GatoUUID &b);
-	friend bool operator!=(const GatoUUID &a, const GatoUUID &b);
-
-private:
-	QSharedDataPointer<GatoUUIDPrivate> d;
 };
 
 LIBGATO_EXPORT QDebug operator<<(QDebug debug, const GatoUUID &uuid);

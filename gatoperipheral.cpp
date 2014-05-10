@@ -41,7 +41,8 @@ enum EIRDataFields {
 	EIRTxPowerLevel = 0x0A,
 	EIRDeviceClass = 0x0D,
 	EIRSecurityManagerTKValue = 0x10,
-	EIRSecurityManagerOutOfBandFlags = 0x11
+	EIRSecurityManagerOutOfBandFlags = 0x11,
+	EIRSolicitedUUID128List = 0x15
 };
 
 GatoPeripheral::GatoPeripheral(const GatoAddress &addr, QObject *parent) :
@@ -126,6 +127,10 @@ void GatoPeripheral::parseEIR(quint8 data[], int len)
 			break;
 		case EIRCompleteLocalName:
 			d->parseName(true, &data[pos + 1], item_len - 1);
+			break;
+		case EIRTxPowerLevel:
+		case EIRSolicitedUUID128List:
+			qDebug() << "Unhandled EIR data type" << type;
 			break;
 		default:
 			qWarning() << "Unknown EIR data type" << type;
