@@ -452,7 +452,7 @@ void GatoPeripheralPrivate::parseName(bool complete, quint8 data[], int len)
 {
 	Q_Q(GatoPeripheral);
 	if (complete || !complete_name) {
-		name = QString::fromAscii(reinterpret_cast<char*>(data), len);
+		name = QString::fromUtf8(reinterpret_cast<char*>(data), len);
 		complete_name = complete;
 		emit q->nameChanged();
 	}

@@ -96,7 +96,7 @@ QString GatoAddress::toString() const
 {
 	char addr[18];
 	ba2str(&d->addr.bd, addr);
-	return QString::fromAscii(addr);
+	return QString::fromLatin1(addr);
 }
 
 bool operator==(const GatoAddress &a, const GatoAddress &b)
