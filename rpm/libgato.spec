@@ -20,7 +20,8 @@ License:    GPL2
 URL:        https://gitorious.org/gato/
 Source0:    %{name}-%{version}.tar.bz2
 Source100:  libgato.yaml
-BuildRequires:  pkgconfig(sailfishapp) >= 0.0.10
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(bluez)
 
@@ -62,6 +63,10 @@ rm -rf %{buildroot}
 
 # >> install post
 # << install post
+
+%post -p /sbin/ldconfig
+
+%postun -p /sbin/ldconfig
 
 %files
 %defattr(-,root,root,-)

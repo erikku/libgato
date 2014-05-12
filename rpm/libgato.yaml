@@ -13,7 +13,6 @@ Description: |
 Configure: none
 Builder: qtc5
 PkgConfigBR:
-- sailfishapp >= 0.0.10
 - Qt5Core
 - bluez
 AutoSubPackages:
