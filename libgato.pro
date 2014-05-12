@@ -44,3 +44,5 @@ publicheaders.files = libgato_global.h gato.h \
 	gatouuid.h gatoaddress.h
 publicheaders.path = /usr/include/gato
 INSTALLS += publicheaders
+
+OTHER_FILES += rpm/libgato.yaml rpm/libgato.spec

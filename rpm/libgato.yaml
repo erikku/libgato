@@ -1,0 +1,20 @@
+Name: libgato
+Summary: A GATT library to connect with Bluetooth Smart devices
+Version: 0.1
+Release: 1
+Group: Qt/Qt
+URL: https://gitorious.org/gato/
+License: GPL2
+Sources:
+- '%{name}-%{version}.tar.bz2'
+Description: |
+  Gato is a library implementing a GATT/ATT client (central) designed to connect
+  Qt programs with Bluetooth Smart (also known as Low Energy) devices.
+Configure: none
+Builder: qtc5
+PkgConfigBR:
+- sailfishapp >= 0.0.10
+- Qt5Core
+- bluez
+AutoSubPackages:
+- devel
