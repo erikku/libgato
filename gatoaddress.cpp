@@ -20,7 +20,6 @@
 
 #include <QtCore/QString>
 #include <QtCore/QHash>
-#include <cstdio>
 
 #include <bluetooth/bluetooth.h>
 
