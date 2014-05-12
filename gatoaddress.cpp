@@ -79,6 +79,11 @@ GatoAddress & GatoAddress::operator =(const GatoAddress& o)
 	return *this;
 }
 
+bool GatoAddress::isNull() const
+{
+	return toUInt64() == 0;
+}
+
 quint64 GatoAddress::toUInt64() const
 {
 	return d->addr.u64;

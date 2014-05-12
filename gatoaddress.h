@@ -19,6 +19,8 @@ public:
 
 	GatoAddress& operator=(const GatoAddress& o);
 
+	bool isNull() const;
+
 	void toUInt8Array(quint8 addr[]) const;
 	quint64 toUInt64() const;
 	QString toString() const;
