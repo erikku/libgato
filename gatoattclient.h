@@ -76,8 +76,6 @@ private:
 	bool handleEvent(const QByteArray &event);
 	bool handleResponse(const Request& req, const QByteArray &response);
 
-	void writeUuid16or128(QDataStream& s, const GatoUUID& uuid);
-
 	QList<InformationData> parseInformationData(const QByteArray &data);
 	QList<HandleInformation> parseHandleInformation(const QByteArray &data);
 	QList<AttributeData> parseAttributeData(const QByteArray &data);

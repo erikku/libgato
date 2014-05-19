@@ -184,8 +184,7 @@ uint GatoAttClient::requestReadByType(GatoHandle start, GatoHandle end, const Ga
 	QByteArray data;
 	QDataStream s(&data, QIODevice::WriteOnly);
 	s.setByteOrder(QDataStream::LittleEndian);
-	s << start << end;
-	writeUuid16or128(s, uuid);
+	s << start << end << gatouuid_to_bytearray(uuid, true, false);
 
 	return request(AttOpReadByTypeRequest, data, receiver, member);
 }
@@ -205,8 +204,7 @@ uint GatoAttClient::requestReadByGroupType(GatoHandle start, GatoHandle end, con
 	QByteArray data;
 	QDataStream s(&data, QIODevice::WriteOnly);
 	s.setByteOrder(QDataStream::LittleEndian);
-	s << start << end;
-	writeUuid16or128(s, uuid);
+	s << start << end << gatouuid_to_bytearray(uuid, true, false);
 
 	return request(AttOpReadByGroupTypeRequest, data, receiver, member);
 }
@@ -429,19 +427,6 @@ bool GatoAttClient::handleResponse(const Request &req, const QByteArray &respons
 	}
 }
 
-void GatoAttClient::writeUuid16or128(QDataStream &s, const GatoUUID &uuid)
-{
-	s.setByteOrder(QDataStream::LittleEndian);
-
-	bool uuid16_ok;
-	quint16 uuid16 = uuid.toUInt16(&uuid16_ok);
-	if (uuid16_ok) {
-		s << uuid16;
-	} else {
-		s << uuid.toUInt128();
-	}
-}
-
 QList<GatoAttClient::InformationData> GatoAttClient::parseInformationData(const QByteArray &data)
 {
 	const int format = data[0];
@@ -467,15 +452,17 @@ QList<GatoAttClient::InformationData> GatoAttClient::parseInformationData(const 
 	const char *s = data.constData();
 	for (int i = 0; i < items; i++) {
 		InformationData d;
+		QByteArray uuid;
 		d.handle = read_le<GatoHandle>(&s[pos]);
 		switch (format) {
 		case 1:
-			d.uuid = GatoUUID(read_le<quint16>(&s[pos + 2]));
+			uuid = data.mid(pos + 2, 2);
 			break;
 		case 2:
-			d.uuid = GatoUUID(read_le<gatouint128>(&s[pos + 2]));
+			uuid = data.mid(pos + 2, 16);
 			break;
 		}
+		d.uuid = bytearray_to_gatouuid(uuid);
 
 		list.append(d);
 

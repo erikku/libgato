@@ -20,6 +20,16 @@
 
 #include "helpers.h"
 
+static QByteArray reverse(const QByteArray &ba)
+{
+	int size = ba.size();
+	QByteArray r(size, Qt::Uninitialized);
+	for (int i = 0; i < size; i++) {
+		r[i] = ba[size - i - 1];
+	}
+	return r;
+}
+
 GatoUUID bytearray_to_gatouuid(const QByteArray &ba)
 {
 	switch (ba.size()) {
@@ -28,7 +38,8 @@ GatoUUID bytearray_to_gatouuid(const QByteArray &ba)
 	case 4:
 		return GatoUUID(read_le<quint32>(ba.constData()));
 	case 16:
-		return GatoUUID(read_le<gatouint128>(ba.constData()));
+		// For some reason, Bluetooth UUIDs use "reversed big endian" order.
+		return GatoUUID(QUuid::fromRfc4122(reverse(ba)));
 	default:
 		return GatoUUID();
 	}
@@ -36,29 +47,22 @@ GatoUUID bytearray_to_gatouuid(const QByteArray &ba)
 
 QByteArray gatouuid_to_bytearray(const GatoUUID &uuid, bool use_uuid16, bool use_uuid32)
 {
-	QByteArray ba;
-
 	if (use_uuid16) {
 		quint16 uuid16 = uuid.toUInt16(&use_uuid16);
 		if (use_uuid16) {
-			ba.resize(sizeof(quint16));
-			write_le(uuid16, ba.data());
-			return ba;
+			QByteArray bytes(sizeof(quint16), Qt::Uninitialized);
+			write_le(uuid16, bytes.data());
+			return bytes;
 		}
 	}
 	if (use_uuid32) {
 		quint32 uuid32 = uuid.toUInt32(&use_uuid32);
 		if (use_uuid32) {
-			ba.resize(sizeof(quint32));
-			write_le(uuid32, ba.data());
-			return ba;
+			QByteArray bytes(sizeof(quint32), Qt::Uninitialized);
+			write_le(uuid32, bytes.data());
+			return bytes;
 		}
 	}
 
-	gatouint128 uuid128 = uuid.toUInt128();
-	ba.resize(sizeof(gatouint128));
-	Q_ASSERT(ba.size() == 16);
-	write_le(uuid128, ba.data());
-
-	return ba;
+	return reverse(uuid.toRfc4122());
 }

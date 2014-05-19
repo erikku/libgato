@@ -8,41 +8,6 @@
 
 class GatoUUIDPrivate;
 
-struct gatouint128
-{
-	quint8 data[16];
-};
-
-template<>
-inline LIBGATO_EXPORT gatouint128 qFromLittleEndian<gatouint128>(const uchar *src)
-{
-	gatouint128 dest;
-#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
-	for (int i = 0; i < 16; i++) {
-		dest.data[i] = src[i];
-	}
-#else
-	for (int i = 0; i < 16; i++) {
-		dest.data[i] = src[15 - i];
-	}
-#endif
-	return dest;
-}
-
-template<>
-inline LIBGATO_EXPORT void qToLittleEndian<gatouint128>(gatouint128 src, uchar *dest)
-{
-#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
-	for (int i = 0; i < 16; i++) {
-		dest[i] = src.data[i];
-	}
-#else
-	for (int i = 0; i < 16; i++) {
-		dest[i] = src.data[15 - i];
-	}
-#endif
-}
-
 class LIBGATO_EXPORT GatoUUID : public QUuid
 {
 public:
@@ -71,7 +36,6 @@ public:
 	GatoUUID(GattUuid uuid);
 	explicit GatoUUID(quint16 uuid);
 	explicit GatoUUID(quint32 uuid);
-	explicit GatoUUID(gatouint128 uuid);
 	explicit GatoUUID(const QString &uuid);
 	GatoUUID(const GatoUUID &o);
 	GatoUUID(const QUuid &uuid);
@@ -81,14 +45,10 @@ public:
 
 	quint16 toUInt16(bool *ok = 0) const;
 	quint32 toUInt32(bool *ok = 0) const;
-	gatouint128 toUInt128() const;
 };
 
 LIBGATO_EXPORT QDebug operator<<(QDebug debug, const GatoUUID &uuid);
 
-LIBGATO_EXPORT QDataStream & operator<<(QDataStream &s, const gatouint128 &u);
-LIBGATO_EXPORT QDataStream & operator>>(QDataStream &s, gatouint128 &u);
-
-LIBGATO_EXPORT uint qHash(const GatoUUID &a);
+LIBGATO_EXPORT uint qHash(const GatoUUID &a, uint seed = 0);
 
 #endif // GATOUUID_H

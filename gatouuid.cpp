@@ -58,23 +58,6 @@ GatoUUID::GatoUUID(quint32 uuid)
 {
 }
 
-GatoUUID::GatoUUID(gatouint128 uuid)
-    : QUuid()
-{
-	quint32 tmp32;
-	memcpy(&tmp32, &uuid.data[0], 4);
-	data1 = qFromBigEndian<quint32>(tmp32);
-
-	quint16 tmp16;
-	memcpy(&tmp16, &uuid.data[4], 2);
-	data2 = qFromBigEndian<quint16>(tmp16);
-
-	memcpy(&tmp16, &uuid.data[6], 2);
-	data3 = qFromBigEndian<quint16>(tmp16);
-
-	memcpy(data4, &uuid.data[8], 8);
-}
-
 GatoUUID::GatoUUID(const QString &uuid)
     : QUuid(uuid)
 {
@@ -137,24 +120,6 @@ quint32 GatoUUID::toUInt32(bool *ok) const
 	}
 }
 
-gatouint128 GatoUUID::toUInt128() const
-{
-	gatouint128 uuid;
-
-	quint32 tmp32 = qToBigEndian<quint32>(data1);
-	memcpy(&uuid.data[0], &tmp32, 4);
-
-	quint16 tmp16 = qToBigEndian<quint16>(data2);
-	memcpy(&uuid.data[4], &tmp16, 2);
-
-	tmp16 = qToBigEndian<quint16>(data3);
-	memcpy(&uuid.data[6], &tmp16, 2);
-
-	memcpy(&uuid.data[8], data4, 8);
-
-	return uuid;
-}
-
 QDebug operator<<(QDebug debug, const GatoUUID &uuid)
 {
 	quint16 uuid16;
@@ -177,42 +142,14 @@ QDebug operator<<(QDebug debug, const GatoUUID &uuid)
     return debug.space();
 }
 
-QDataStream & operator<<(QDataStream &s, const gatouint128 &u)
+uint qHash(const GatoUUID &uuid, uint seed)
 {
-	if (static_cast<QSysInfo::Endian>(s.byteOrder()) == QSysInfo::ByteOrder) {
-		for (int i = 0; i < 16; i++) {
-			s << u.data[i];
-		}
-	} else {
-		for (int i = 15; i >= 0; i--) {
-			s << u.data[i];
-		}
-	}
-	return s;
-}
-
-QDataStream & operator>>(QDataStream &s, gatouint128 &u)
-{
-	if (static_cast<QSysInfo::Endian>(s.byteOrder()) == QSysInfo::ByteOrder) {
-		for (int i = 0; i < 16; i++) {
-			s >> u.data[i];
-		}
-	} else {
-		for (int i = 15; i >= 0; i--) {
-			s >> u.data[i];
-		}
-	}
-	return s;
-}
-
-uint qHash(const GatoUUID &a)
-{
-	gatouint128 u128 = a.toUInt128();
-
-	uint h = u128.data[0] << 24 | u128.data[1] << 16 | u128.data[2] << 8 | u128.data[3] << 0;
-	h ^= u128.data[4] << 24 | u128.data[5] << 16 | u128.data[6] << 8 | u128.data[7] << 0;
-	h ^= u128.data[8] << 24 | u128.data[9] << 16 | u128.data[10] << 8 | u128.data[11] << 0;
-	h ^= u128.data[12] << 24 | u128.data[13] << 16 | u128.data[14] << 8 | u128.data[15] << 0;
-
-	return h;
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+	return uuid.data1 ^ uuid.data2 ^ (uuid.data3 << 16)
+			^ ((uuid.data4[0] << 24) | (uuid.data4[1] << 16) | (uuid.data4[2] << 8) | uuid.data4[3])
+			^ ((uuid.data4[4] << 24) | (uuid.data4[5] << 16) | (uuid.data4[6] << 8) | uuid.data4[7])
+			^ seed;
+#else
+	return qHash<QUuid>(uuid, seed);
+#endif
 }

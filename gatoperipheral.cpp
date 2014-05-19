@@ -430,21 +430,16 @@ void GatoPeripheralPrivate::parseEIRUUIDs(int size, bool complete, quint8 data[]
 {
 	Q_UNUSED(complete);
 
-	for (int pos = 0; pos < len; pos += size) {
-		GatoUUID uuid;
-		switch (size) {
-		case 16/8:
-			uuid = GatoUUID(qFromLittleEndian<quint16>(&data[pos]));
-			break;
-		case 32/8:
-			uuid = GatoUUID(qFromLittleEndian<quint32>(&data[pos]));
-			break;
-		case 128/8:
-			uuid = GatoUUID(qFromLittleEndian<gatouint128>(&data[pos]));
-			break;
-		}
+	if (size != 16/8 && size != 32/8 && size != 128/8) {
+		qWarning() << "Unhandled UUID size: " << size;
+		return;
+	}
 
-		service_uuids.insert(uuid);
+	for (int pos = 0; pos < len; pos += size) {
+		char *ptr = reinterpret_cast<char*>(&data[pos]);
+		QByteArray ba = QByteArray::fromRawData(ptr, size/8);
+
+		service_uuids.insert(bytearray_to_gatouuid(ba));
 	}
 }
 
