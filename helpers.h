@@ -31,5 +31,6 @@ void write_le(T src, char *dst)
 
 GatoUUID bytearray_to_gatouuid(const QByteArray &ba);
 QByteArray gatouuid_to_bytearray(const GatoUUID &uuid, bool use_uuid16, bool use_uuid32);
+void write_gatouuid(QDataStream &s, const GatoUUID &uuid, bool use_uuid16, bool use_uuid32);
 
 #endif // HELPERS_H

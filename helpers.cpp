@@ -18,6 +18,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <QtCore/QDataStream>
 #include "helpers.h"
 
 static QByteArray reverse(const QByteArray &ba)
@@ -65,4 +66,10 @@ QByteArray gatouuid_to_bytearray(const GatoUUID &uuid, bool use_uuid16, bool use
 	}
 
 	return reverse(uuid.toRfc4122());
+}
+
+void write_gatouuid(QDataStream &s, const GatoUUID &uuid, bool use_uuid16, bool use_uuid32)
+{
+	QByteArray bytes = gatouuid_to_bytearray(uuid, use_uuid16, use_uuid32);
+	s.writeRawData(bytes.constData(), bytes.size());
 }

@@ -184,7 +184,8 @@ uint GatoAttClient::requestReadByType(GatoHandle start, GatoHandle end, const Ga
 	QByteArray data;
 	QDataStream s(&data, QIODevice::WriteOnly);
 	s.setByteOrder(QDataStream::LittleEndian);
-	s << start << end << gatouuid_to_bytearray(uuid, true, false);
+	s << start << end;
+	write_gatouuid(s, uuid, true, false);
 
 	return request(AttOpReadByTypeRequest, data, receiver, member);
 }
@@ -204,7 +205,8 @@ uint GatoAttClient::requestReadByGroupType(GatoHandle start, GatoHandle end, con
 	QByteArray data;
 	QDataStream s(&data, QIODevice::WriteOnly);
 	s.setByteOrder(QDataStream::LittleEndian);
-	s << start << end << gatouuid_to_bytearray(uuid, true, false);
+	s << start << end;
+	write_gatouuid(s, uuid, true, false);
 
 	return request(AttOpReadByGroupTypeRequest, data, receiver, member);
 }
