@@ -90,6 +90,7 @@ bool GatoSocket::connectTo(const GatoAddress &addr, unsigned short cid)
 void GatoSocket::close()
 {
 	if (s != StateDisconnected) {
+		// TODO We do not flush the writeQueue, but rather drop all data.
 		delete readNotifier;
 		delete writeNotifier;
 		readQueue.clear();
@@ -144,7 +145,7 @@ void GatoSocket::readNotify()
 
 	int read = ::read(fd, buf.data(), buf.size());
 	if (read < 0) {
-		qErrnoWarning("Could not read to L2 socket");
+		qErrnoWarning("Could not read from L2 socket");
 		close();
 		return;
 	} else if (read == 0) {

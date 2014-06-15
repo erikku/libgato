@@ -7,6 +7,7 @@
 
 #include "gatoaddress.h"
 
+/** This class encapsulates a message-oriented bluetooth L2CAP socket. */
 class GatoSocket : public QObject
 {
 	Q_OBJECT
@@ -22,17 +23,26 @@ public:
 		StateConnected
 	};
 
+	enum Error {
+		TimeoutError,
+		UnknownError
+	};
+
 	State state() const;
 
 	bool connectTo(const GatoAddress &addr, unsigned short cid);
 	void close();
 
+	/** Dequeues a pending message from the rx queue.
+	 *  Doesn't block: if there are no pending messages, returns null QByteArray. */
 	QByteArray receive();
+	/** Adds a message to the tx queue. */
 	void send(const QByteArray &pkt);
 
 signals:
 	void connected();
 	void disconnected();
+	void error(Error error);
 	void readyRead();
 
 private:
