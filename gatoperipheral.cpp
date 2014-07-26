@@ -28,6 +28,7 @@
 #include "gatouuid.h"
 #include "helpers.h"
 
+/* Consult Bluetooth.org "Generic Access Profile" assigned numbers specification */
 enum EIRDataFields {
 	EIRFlags = 0x01,
 	EIRIncompleteUUID16List = 0x02,
@@ -42,7 +43,14 @@ enum EIRDataFields {
 	EIRDeviceClass = 0x0D,
 	EIRSecurityManagerTKValue = 0x10,
 	EIRSecurityManagerOutOfBandFlags = 0x11,
-	EIRSolicitedUUID128List = 0x15
+	EIRSolicitedUUID16List = 0x14,
+	EIRSolicitedUUID32List = 0x1F,
+	EIRSolicitedUUID128List = 0x15,
+	EIRAppearance = 0x19,
+	EIRAdvertisingInterval = 0x1A,
+	EIRLEBluetoothDeviceAddress = 0x1B,
+	EIRLERole = 0x1C,
+	EIRManufacturerData = 0xFF
 };
 
 GatoPeripheral::GatoPeripheral(const GatoAddress &addr, QObject *parent) :
@@ -98,8 +106,13 @@ void GatoPeripheral::parseEIR(quint8 data[], int len)
 		int item_len = data[pos];
 		pos++;
 		if (item_len == 0) break;
+
 		int type = data[pos];
-		assert(pos + item_len <= len);
+		if (pos + item_len > len) {
+			qWarning() << "Malformed EIR data";
+			return;
+		}
+
 		switch (type) {
 		case EIRFlags:
 			d->parseEIRFlags(&data[pos + 1], item_len - 1);
@@ -128,9 +141,18 @@ void GatoPeripheral::parseEIR(quint8 data[], int len)
 		case EIRCompleteLocalName:
 			d->parseName(true, &data[pos + 1], item_len - 1);
 			break;
+
+		// Following EIR fields are purposefully ignored:
+		case EIRSolicitedUUID16List:
+		case EIRSolicitedUUID32List:
+		case EIRSolicitedUUID128List: // We do not expose any services
 		case EIRTxPowerLevel:
-		case EIRSolicitedUUID128List:
-			qDebug() << "Unhandled EIR data type" << type;
+		case EIRAppearance:
+		case EIRAdvertisingInterval:
+		case EIRLEBluetoothDeviceAddress:
+		case EIRLERole:
+		case EIRManufacturerData:
+			qDebug() << "Ignored EIR data type" << type;
 			break;
 		default:
 			qWarning() << "Unknown EIR data type" << type;
@@ -140,7 +162,10 @@ void GatoPeripheral::parseEIR(quint8 data[], int len)
 		pos += item_len;
 	}
 
-	assert(pos == len);
+	if (pos != len) {
+		qWarning() << "Invalid trailing data after EIR";
+		return;
+	}
 }
 
 bool GatoPeripheral::advertisesService(const GatoUUID &uuid) const
@@ -446,7 +471,7 @@ void GatoPeripheralPrivate::parseEIRUUIDs(int size, bool complete, quint8 data[]
 
 	for (int pos = 0; pos < len; pos += size) {
 		char *ptr = reinterpret_cast<char*>(&data[pos]);
-		QByteArray ba = QByteArray::fromRawData(ptr, size/8);
+		QByteArray ba = QByteArray::fromRawData(ptr, size);
 
 		service_uuids.insert(bytearray_to_gatouuid(ba));
 	}
