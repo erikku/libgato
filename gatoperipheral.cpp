@@ -276,6 +276,7 @@ void GatoPeripheral::readValue(const GatoCharacteristic &characteristic)
 
 	GatoService &our_service = d->services[service_handle];
 	Q_ASSERT(our_service.containsCharacteristic(char_handle));
+	Q_UNUSED(our_service);
 
 	if (state() == StateConnected) {
 		uint req = d->att->requestRead(characteristic.valueHandle(),
@@ -303,6 +304,7 @@ void GatoPeripheral::readValue(const GatoDescriptor &descriptor)
 
 	GatoService &our_service = d->services[service_handle];
 	Q_ASSERT(our_service.containsCharacteristic(char_handle));
+	Q_UNUSED(our_service);
 
 	if (state() == StateConnected) {
 		uint req = d->att->requestRead(descriptor.handle(),
@@ -327,6 +329,7 @@ void GatoPeripheral::writeValue(const GatoCharacteristic &characteristic, const 
 
 	GatoService &our_service = d->services[service_handle];
 	Q_ASSERT(our_service.containsCharacteristic(char_handle));
+	Q_UNUSED(our_service);
 
 	if (state() == StateConnected) {
 		switch (type) {
@@ -362,6 +365,7 @@ void GatoPeripheral::writeValue(const GatoDescriptor &descriptor, const QByteArr
 
 	GatoService &our_service = d->services[service_handle];
 	Q_ASSERT(our_service.containsCharacteristic(char_handle));
+	Q_UNUSED(our_service);
 
 	if (state() == StateConnected) {
 		d->att->requestWrite(descriptor.handle(), data,
