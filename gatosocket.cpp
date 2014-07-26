@@ -126,6 +126,11 @@ GatoSocket::SecurityLevel GatoSocket::securityLevel() const
 	bt_security bt_sec;
 	socklen_t len = sizeof(bt_sec);
 
+	if (s == StateDisconnected) {
+		qWarning() << "Socket not connected";
+		return SecurityNone;
+	}
+
 	if (::getsockopt(fd, SOL_BLUETOOTH, BT_SECURITY, &bt_sec, &len) == 0) {
 		switch (bt_sec.level) {
 		case BT_SECURITY_SDP:
@@ -142,6 +147,39 @@ GatoSocket::SecurityLevel GatoSocket::securityLevel() const
 	}
 
 	return SecurityNone;
+}
+
+bool GatoSocket::setSecurityLevel(SecurityLevel level)
+{
+	bt_security bt_sec;
+	socklen_t len = sizeof(bt_sec);
+
+	if (s == StateDisconnected) {
+		qWarning() << "Socket not connected";
+		return SecurityNone;
+	}
+
+	switch (level) {
+	case SecurityNone:
+	case SecurityLow:
+		bt_sec.level = BT_SECURITY_LOW;
+		break;
+	case SecurityMedium:
+		bt_sec.level = BT_SECURITY_MEDIUM;
+		break;
+	case SecurityHigh:
+		// Will this even work in BT LE?
+		bt_sec.level = BT_SECURITY_HIGH;
+		break;
+	}
+	bt_sec.key_size = 0;
+
+	if (::setsockopt(fd, SOL_BLUETOOTH, BT_SECURITY, &bt_sec, len) == 0) {
+		return true;
+	} else {
+		qErrnoWarning("Could not set security level in L2 socket");
+		return false;
+	}
 }
 
 bool GatoSocket::transmit(const QByteArray &pkt)

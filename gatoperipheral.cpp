@@ -149,7 +149,7 @@ bool GatoPeripheral::advertisesService(const GatoUUID &uuid) const
 	return d->service_uuids.contains(uuid);
 }
 
-void GatoPeripheral::connectPeripheral()
+void GatoPeripheral::connectPeripheral(PeripheralConnectOptions options)
 {
 	Q_D(GatoPeripheral);
 	if (d->att->state() != GatoSocket::StateDisconnected) {
@@ -157,7 +157,12 @@ void GatoPeripheral::connectPeripheral()
 		return;
 	}
 
-	d->att->connectTo(d->addr);
+	GatoSocket::SecurityLevel sec_level = GatoSocket::SecurityLow;
+	if (options & PeripheralConnectOptionRequireEncryption) {
+		sec_level = GatoSocket::SecurityMedium;
+	}
+
+	d->att->connectTo(d->addr, sec_level);
 }
 
 void GatoPeripheral::disconnectPeripheral()

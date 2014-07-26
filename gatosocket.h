@@ -47,6 +47,7 @@ public:
 	void send(const QByteArray &pkt);
 
 	SecurityLevel securityLevel() const;
+	bool setSecurityLevel(SecurityLevel level);
 
 signals:
 	void connected();
