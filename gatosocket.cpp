@@ -20,8 +20,6 @@
 
 #include <QtCore/QDebug>
 
-#include <limits>
-
 #include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
@@ -167,7 +165,7 @@ void GatoSocket::writeNotify()
 		int soerror = 0;
 		socklen_t len = sizeof(soerror);
 		if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &soerror, &len) != 0) {
-			// An error while reading the error?
+			// An error while reading the error
 			qErrnoWarning("Could not get L2 socket options");
 			close();
 			return;
@@ -180,6 +178,12 @@ void GatoSocket::writeNotify()
 
 		s = StateConnected;
 		emit connected();
+
+		bt_security bt_sec;
+		len = sizeof(bt_sec);
+		if (::getsockopt(fd, SOL_BLUETOOTH, BT_SECURITY, &bt_sec, &len) == 0) {
+			qDebug() << "Established a bluetooth channel with security level " << bt_sec.level;
+		}
 	} else if (s == StateConnected) {
 		if (!writeQueue.isEmpty()) {
 			if (transmit(writeQueue.head())) {
