@@ -121,6 +121,29 @@ void GatoSocket::send(const QByteArray &pkt)
 	writeNotifier->setEnabled(true);
 }
 
+GatoSocket::SecurityLevel GatoSocket::securityLevel() const
+{
+	bt_security bt_sec;
+	socklen_t len = sizeof(bt_sec);
+
+	if (::getsockopt(fd, SOL_BLUETOOTH, BT_SECURITY, &bt_sec, &len) == 0) {
+		switch (bt_sec.level) {
+		case BT_SECURITY_SDP:
+			return SecurityNone;
+		case BT_SECURITY_LOW:
+			return SecurityLow;
+		case BT_SECURITY_MEDIUM:
+			return SecurityMedium;
+		case BT_SECURITY_HIGH:
+			return SecurityHigh;
+		}
+	} else {
+		qErrnoWarning("Could not read security level from L2 socket");
+	}
+
+	return SecurityNone;
+}
+
 bool GatoSocket::transmit(const QByteArray &pkt)
 {
 	int written = ::write(fd, pkt.constData(), pkt.size());
@@ -155,6 +178,8 @@ void GatoSocket::readNotify()
 	readQueue.enqueue(buf);
 
 	if (readQueue.size() == 1) {
+		// Read queue was empty, but now contains the item we just added.
+		// Signal readers there is data available.
 		emit readyRead();
 	}
 }
@@ -178,12 +203,6 @@ void GatoSocket::writeNotify()
 
 		s = StateConnected;
 		emit connected();
-
-		bt_security bt_sec;
-		len = sizeof(bt_sec);
-		if (::getsockopt(fd, SOL_BLUETOOTH, BT_SECURITY, &bt_sec, &len) == 0) {
-			qDebug() << "Established a bluetooth channel with security level " << bt_sec.level;
-		}
 	} else if (s == StateConnected) {
 		if (!writeQueue.isEmpty()) {
 			if (transmit(writeQueue.head())) {

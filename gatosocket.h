@@ -28,6 +28,13 @@ public:
 		UnknownError
 	};
 
+	enum SecurityLevel {
+		SecurityNone,
+		SecurityLow,
+		SecurityMedium,
+		SecurityHigh
+	};
+
 	State state() const;
 
 	bool connectTo(const GatoAddress &addr, unsigned short cid);
@@ -38,6 +45,8 @@ public:
 	QByteArray receive();
 	/** Adds a message to the tx queue. */
 	void send(const QByteArray &pkt);
+
+	SecurityLevel securityLevel() const;
 
 signals:
 	void connected();
