@@ -50,7 +50,7 @@ public:
 	bool advertisesService(const GatoUUID &uuid) const;
 
 public slots:
-	void connectPeripheral(PeripheralConnectOptions options);
+	void connectPeripheral(PeripheralConnectOptions options = 0);
 	void disconnectPeripheral();
 
 	void discoverServices();
