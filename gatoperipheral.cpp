@@ -160,7 +160,7 @@ void GatoPeripheral::parseEIR(quint8 data[], int len)
 		case EIRLEBluetoothDeviceAddress:
 		case EIRLERole:
 		case EIRManufacturerData:
-			qDebug() << "Ignored EIR data type" << type;
+			//qDebug() << "Ignored EIR data type" << type;
 			break;
 		default:
 			//qWarning() << "Unknown EIR data type" << type;
