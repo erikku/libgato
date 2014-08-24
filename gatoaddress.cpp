@@ -31,6 +31,7 @@ struct GatoAddressPrivate : QSharedData
 		bdaddr_t bd;
 		quint64 u64;
 	} addr;
+	quint8 addr_type;
 };
 
 GatoAddress::GatoAddress()
@@ -44,12 +45,31 @@ GatoAddress::GatoAddress(quint64 addr)
     : d(new GatoAddressPrivate)
 {
 	d->addr.u64 = addr;
+	d->addr_type = BDADDR_LE_PUBLIC;
+}
+
+GatoAddress::GatoAddress(quint64 addr, quint8 addr_type)
+    : d(new GatoAddressPrivate)
+{
+	d->addr.u64 = addr;
+	d->addr_type = addr_type;
 }
 
 GatoAddress::GatoAddress(quint8 addr[])
     : d(new GatoAddressPrivate)
 {
 	d->addr.u64 = 0;
+	d->addr_type = BDADDR_LE_PUBLIC;
+	for (int i = 0; i < 6; i++) {
+		d->addr.bd.b[i] = addr[i];
+	}
+}
+
+GatoAddress::GatoAddress(quint8 addr[], quint8 addr_type)
+    : d(new GatoAddressPrivate)
+{
+	d->addr.u64 = 0;
+	d->addr_type = addr_type;
 	for (int i = 0; i < 6; i++) {
 		d->addr.bd.b[i] = addr[i];
 	}
@@ -59,6 +79,15 @@ GatoAddress::GatoAddress(const QString &addr)
     : d(new GatoAddressPrivate)
 {
 	d->addr.u64 = 0;
+	d->addr_type = BDADDR_LE_PUBLIC;
+	str2ba(addr.toLatin1().constData(), &d->addr.bd);
+}
+
+GatoAddress::GatoAddress(const QString &addr, quint8 addr_type)
+    : d(new GatoAddressPrivate)
+{
+	d->addr.u64 = 0;
+	d->addr_type = addr_type;
 	str2ba(addr.toLatin1().constData(), &d->addr.bd);
 }
 
@@ -101,6 +130,11 @@ QString GatoAddress::toString() const
 	char addr[18];
 	ba2str(&d->addr.bd, addr);
 	return QString::fromLatin1(addr);
+}
+
+quint8 GatoAddress::addressType() const
+{
+	return d->addr_type;
 }
 
 bool operator==(const GatoAddress &a, const GatoAddress &b)

@@ -39,6 +39,7 @@ public:
 	GatoAddress address() const;
 	QString name() const;
 	QList<GatoService> services() const;
+	QByteArray advertData() const;
 
 	void parseEIR(quint8 data[], int len);
 	bool advertisesService(const GatoUUID &uuid) const;

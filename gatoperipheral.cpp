@@ -89,9 +89,17 @@ QList<GatoService> GatoPeripheral::services() const
 	return d->services.values();
 }
 
+QByteArray GatoPeripheral::advertData() const
+{
+	Q_D(const GatoPeripheral);
+	return d->advert_data;
+}
+
 void GatoPeripheral::parseEIR(quint8 data[], int len)
 {
 	Q_D(GatoPeripheral);
+
+	d->advert_data = QByteArray((char*)data, len);
 
 	int pos = 0;
 	while (pos < len) {
@@ -133,7 +141,7 @@ void GatoPeripheral::parseEIR(quint8 data[], int len)
 			qDebug() << "Unhandled EIR data type" << type;
 			break;
 		default:
-			qWarning() << "Unknown EIR data type" << type;
+			//qWarning() << "Unknown EIR data type" << type;
 			break;
 		}
 

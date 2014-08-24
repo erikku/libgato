@@ -12,8 +12,11 @@ class LIBGATO_EXPORT GatoAddress
 public:
 	GatoAddress();
 	explicit GatoAddress(quint8 addr[]);
+	explicit GatoAddress(quint8 addr[], quint8 addr_type);
 	explicit GatoAddress(quint64 addr);
+	explicit GatoAddress(quint64 addr, quint8 addr_type);
 	explicit GatoAddress(const QString &addr);
+	explicit GatoAddress(const QString &addr, quint8 addr_type);
 	GatoAddress(const GatoAddress& o);
 	~GatoAddress();
 
@@ -23,6 +26,7 @@ public:
 
 	void toUInt8Array(quint8 addr[]) const;
 	quint64 toUInt64() const;
+	quint8 addressType() const;
 	QString toString() const;
 
 private:

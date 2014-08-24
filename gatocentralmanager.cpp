@@ -210,12 +210,15 @@ void GatoCentralManagerPrivate::handleAdvertising(le_advertising_info *info, int
 {
 	Q_Q(GatoCentralManager);
 
+	/*
 	qDebug() << "Advertising event type" << info->evt_type
 	         << "address type" << info->bdaddr_type
 	         << "data length" << info->length
 	         << "rssi" << rssi;
+	*/
 
-	GatoAddress addr(info->bdaddr.b);
+	GatoAddress addr(info->bdaddr.b, info->bdaddr_type);
+
 	GatoPeripheral *peripheral;
 	QHash<GatoAddress, GatoPeripheral*>::iterator it = peripherals.find(addr);
 	if (it == peripherals.end()) {
@@ -243,6 +246,6 @@ void GatoCentralManagerPrivate::handleAdvertising(le_advertising_info *info, int
 	}
 
 	if (passes_filter) {
-		emit q->discoveredPeripheral(peripheral, rssi);
+		emit q->discoveredPeripheral(peripheral, info->evt_type, rssi);
 	}
 }

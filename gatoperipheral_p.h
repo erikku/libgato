@@ -22,6 +22,7 @@ public:
 	QString name;
 	QSet<GatoUUID> service_uuids;
 	QMap<GatoHandle, GatoService> services;
+	QByteArray advert_data;
 
 	bool complete_name : 1;
 	bool complete_services : 1;

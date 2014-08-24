@@ -33,7 +33,7 @@ public slots:
 	void stopScan();
 
 signals:
-	void discoveredPeripheral(GatoPeripheral *peripheral, int rssi);
+	void discoveredPeripheral(GatoPeripheral *peripheral, quint8 advertType, int rssi);
 
 private slots:
 	void _q_readNotify();

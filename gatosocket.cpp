@@ -72,9 +72,14 @@ bool GatoSocket::connectTo(const GatoAddress &addr, unsigned short cid)
 
 	l2addr.l2_family = AF_BLUETOOTH;
 	l2addr.l2_cid = htobs(cid);
-#ifdef BDADDR_LE_PUBLIC
-	l2addr.l2_bdaddr_type = BDADDR_LE_PUBLIC; // TODO
-#endif
+
+	// These are NOT mapped the way you expect.
+	if(addr.addressType() == 1) // 1 = Random device address.
+		l2addr.l2_bdaddr_type = BDADDR_LE_RANDOM;
+	else // 0 = Public device address.
+		l2addr.l2_bdaddr_type = BDADDR_LE_PUBLIC;
+
+	// Save the device address.
 	addr.toUInt8Array(l2addr.l2_bdaddr.b);
 
 	int err = ::connect(fd, reinterpret_cast<sockaddr*>(&l2addr), sizeof(l2addr));
