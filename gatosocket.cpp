@@ -20,8 +20,6 @@
 
 #include <QtCore/QDebug>
 
-#include <limits>
-
 #include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
@@ -95,6 +93,7 @@ bool GatoSocket::connectTo(const GatoAddress &addr, unsigned short cid)
 void GatoSocket::close()
 {
 	if (s != StateDisconnected) {
+		// TODO We do not flush the writeQueue, but rather drop all data.
 		delete readNotifier;
 		delete writeNotifier;
 		readQueue.clear();
@@ -127,6 +126,67 @@ void GatoSocket::send(const QByteArray &pkt)
 	writeNotifier->setEnabled(true);
 }
 
+GatoSocket::SecurityLevel GatoSocket::securityLevel() const
+{
+	bt_security bt_sec;
+	socklen_t len = sizeof(bt_sec);
+
+	if (s == StateDisconnected) {
+		qWarning() << "Socket not connected";
+		return SecurityNone;
+	}
+
+	if (::getsockopt(fd, SOL_BLUETOOTH, BT_SECURITY, &bt_sec, &len) == 0) {
+		switch (bt_sec.level) {
+		case BT_SECURITY_SDP:
+			return SecurityNone;
+		case BT_SECURITY_LOW:
+			return SecurityLow;
+		case BT_SECURITY_MEDIUM:
+			return SecurityMedium;
+		case BT_SECURITY_HIGH:
+			return SecurityHigh;
+		}
+	} else {
+		qErrnoWarning("Could not read security level from L2 socket");
+	}
+
+	return SecurityNone;
+}
+
+bool GatoSocket::setSecurityLevel(SecurityLevel level)
+{
+	bt_security bt_sec;
+	socklen_t len = sizeof(bt_sec);
+
+	if (s == StateDisconnected) {
+		qWarning() << "Socket not connected";
+		return SecurityNone;
+	}
+
+	switch (level) {
+	case SecurityNone:
+	case SecurityLow:
+		bt_sec.level = BT_SECURITY_LOW;
+		break;
+	case SecurityMedium:
+		bt_sec.level = BT_SECURITY_MEDIUM;
+		break;
+	case SecurityHigh:
+		// Will this even work in BT LE?
+		bt_sec.level = BT_SECURITY_HIGH;
+		break;
+	}
+	bt_sec.key_size = 0;
+
+	if (::setsockopt(fd, SOL_BLUETOOTH, BT_SECURITY, &bt_sec, len) == 0) {
+		return true;
+	} else {
+		qErrnoWarning("Could not set security level in L2 socket");
+		return false;
+	}
+}
+
 bool GatoSocket::transmit(const QByteArray &pkt)
 {
 	int written = ::write(fd, pkt.constData(), pkt.size());
@@ -149,7 +209,7 @@ void GatoSocket::readNotify()
 
 	int read = ::read(fd, buf.data(), buf.size());
 	if (read < 0) {
-		qErrnoWarning("Could not read to L2 socket");
+		qErrnoWarning("Could not read from L2 socket");
 		close();
 		return;
 	} else if (read == 0) {
@@ -161,6 +221,8 @@ void GatoSocket::readNotify()
 	readQueue.enqueue(buf);
 
 	if (readQueue.size() == 1) {
+		// Read queue was empty, but now contains the item we just added.
+		// Signal readers there is data available.
 		emit readyRead();
 	}
 }
@@ -171,7 +233,7 @@ void GatoSocket::writeNotify()
 		int soerror = 0;
 		socklen_t len = sizeof(soerror);
 		if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &soerror, &len) != 0) {
-			// An error while reading the error?
+			// An error while reading the error
 			qErrnoWarning("Could not get L2 socket options");
 			close();
 			return;

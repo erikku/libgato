@@ -37,9 +37,8 @@ struct GatoAddressPrivate : QSharedData
 GatoAddress::GatoAddress()
     : d(new GatoAddressPrivate)
 {
+	d->addr.u64 = 0;
 }
-
-
 
 GatoAddress::GatoAddress(quint64 addr)
     : d(new GatoAddressPrivate)

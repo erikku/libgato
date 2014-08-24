@@ -86,7 +86,7 @@ void GatoCentralManager::scanForPeripheralsWithServices(const QList<GatoUUID> &u
 	hci_le_set_scan_enable(d->hci, 0, 0, d->timeout);
 
 	rc = hci_le_set_scan_parameters(d->hci, scan_type,
-	                                htobs(0x0010), htobs(0x0010),
+									htobs(0x0100), htobs(0x0030),
 	                                0 /* Public address */,
 	                                0 /* No filter ? */,
 	                                d->timeout);

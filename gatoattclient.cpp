@@ -75,7 +75,8 @@ static QByteArray remove_method_signature(const char *sig)
 }
 
 GatoAttClient::GatoAttClient(QObject *parent) :
-    QObject(parent), socket(new GatoSocket(this)), cur_mtu(ATT_DEFAULT_LE_MTU), next_id(1)
+	QObject(parent), socket(new GatoSocket(this)), cur_mtu(ATT_DEFAULT_LE_MTU), next_id(1),
+	required_sec(GatoSocket::SecurityLow)
 {
 	connect(socket, SIGNAL(connected()), SLOT(handleSocketConnected()));
 	connect(socket, SIGNAL(disconnected()), SLOT(handleSocketDisconnected()));
@@ -91,8 +92,9 @@ GatoSocket::State GatoAttClient::state() const
 	return socket->state();
 }
 
-bool GatoAttClient::connectTo(const GatoAddress &addr)
+bool GatoAttClient::connectTo(const GatoAddress &addr, GatoSocket::SecurityLevel sec_level)
 {
+	required_sec = sec_level;
 	return socket->connectTo(addr, ATT_CID);
 }
 
@@ -540,6 +542,10 @@ QList<GatoAttClient::AttributeGroupData> GatoAttClient::parseAttributeGroupData(
 
 void GatoAttClient::handleSocketConnected()
 {
+	if (socket->securityLevel() < required_sec) {
+		socket->setSecurityLevel(required_sec);
+	}
+
 	requestExchangeMTU(ATT_MAX_LE_MTU, this, SLOT(handleServerMTU(quint16)));
 	emit connected();
 }

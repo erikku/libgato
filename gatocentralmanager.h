@@ -16,14 +16,14 @@ class LIBGATO_EXPORT GatoCentralManager : public QObject
 	Q_FLAGS(PeripheralScanOptions)
 
 public:
+	explicit GatoCentralManager(QObject *parent = 0);
+	~GatoCentralManager();
+
 	enum PeripheralScanOption {
 		PeripheralScanOptionActive = 1 << 0,
 		PeripheralScanOptionAllowDuplicates = 1 << 1
 	};
 	Q_DECLARE_FLAGS(PeripheralScanOptions, PeripheralScanOption)
-
-	explicit GatoCentralManager(QObject *parent = 0);
-	~GatoCentralManager();
 
 	GatoPeripheral *getPeripheral(const GatoAddress& address);
 

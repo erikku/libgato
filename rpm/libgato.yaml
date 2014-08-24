@@ -1,6 +1,6 @@
 Name: libgato
 Summary: A GATT library to connect with Bluetooth Smart devices
-Version: 0.1
+Version: 0.1.4
 Release: 1
 Group: Qt/Qt
 URL: https://gitorious.org/gato/
