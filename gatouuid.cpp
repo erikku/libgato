@@ -100,13 +100,15 @@ int GatoUUID::minimumSize() const
 
 quint16 GatoUUID::toUInt16(bool *ok) const
 {
-	if (minimumSize() <= 2) {
+	/*if (minimumSize() <= 2) {
 		if (ok) *ok = true;
 		return data1;
 	} else {
 		if (ok) *ok = false;
 		return 0;
-	}
+	}*/
+	if (ok) *ok = true;
+	return data1;
 }
 
 quint32 GatoUUID::toUInt32(bool *ok) const
