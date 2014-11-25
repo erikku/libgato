@@ -98,6 +98,7 @@ void GatoSocket::close()
 		delete writeNotifier;
 		readQueue.clear();
 		writeQueue.clear();
+		::close(fd);
 		fd = -1;
 		s = StateDisconnected;
 		emit disconnected();
